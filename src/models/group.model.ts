@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const ChannelSchema = new mongoose.Schema({
+const GroupSchema = new mongoose.Schema({
 	id: {
 		type: Number,
 		required: true,
@@ -13,17 +13,16 @@ const ChannelSchema = new mongoose.Schema({
 		type: String,
 		required: true,
 	},
-	members: [
+	users: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "User",
 		},
 	],
-	showMembers: {
-		type: Boolean,
-    default: false,
-		required: false,
+	bot: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Bot",
 	},
 });
 
-export default ChannelSchema;
+export default GroupSchema;
