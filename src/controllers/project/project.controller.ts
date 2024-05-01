@@ -72,38 +72,40 @@ export const updateProject = async (
 	req: Request,
 	res: Response
 ) => {
-	try {
-		const { id } = req.params;
-		const { name, description, userInfo } = req.body;
+	const { id } = req.params;
+	const { name, description, userInfo } = req.body;
 
-		if (!name || !description) {
-			return res
-				.status(400)
-				.json({ message: "Invalid Request" });
-		}
-
-		// check current user is admin of the project
-		const adminId = secureHash(userInfo.id);
-
-		const project = await ProjectModel.findOne({
-			where: { id },
-		});
-
-		if (!project) {
-			return res
-				.status(401)
-				.json({ message: "Unauthorized" });
-		}
-
-		project.name = name;
-		project.description = description;
-
-		return res.status(200).json(project);
-	} catch (error) {
-		console.log(error);
-
+	if (!name || !description) {
 		return res
-			.status(500)
-			.json({ message: "Internal Server Error" });
+			.status(400)
+			.json({ message: "Invalid Request" });
 	}
+
+	// check current user is admin of	 the project
+	const adminId = secureHash(userInfo.id);
+
+	let project = await ProjectModel.findOne({
+		_id: id,
+	}).populate("admin");
+
+	if (!project) {
+		return res
+			.status(404)
+			.json({ message: "Project not found" });
+	}
+
+	if (project.admin instanceof AdminModel) {
+		// check if the user is the admin of the project
+		if (project.admin.id !== adminId) {
+			return res.status(403).json({ message: "Forbidden" });
+		}
+
+		// update the project
+		await ProjectModel.findOneAndUpdate(
+			{ _id: id },
+			{ name, description }
+		);
+	}
+
+	return res.status(200).json({ message: "OK" });
 };
