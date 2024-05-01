@@ -11,12 +11,15 @@
     "strict": true,
     "skipLibCheck": true,
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": [
-    "./*.js",
     "src/**/*.ts",
     "test/**/*.ts",
   ],
+  "exclude": [
+    "node_modules"
+  ],
+  
 }

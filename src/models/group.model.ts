@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const GroupSchema = new mongoose.Schema({
 	id: {
-		type: Number,
+		type: String,
 		required: true,
 	},
 	name: {
@@ -25,4 +25,6 @@ const GroupSchema = new mongoose.Schema({
 	},
 });
 
-export default GroupSchema;
+const GroupModel = mongoose.model("Group", GroupSchema);
+
+export default GroupModel;

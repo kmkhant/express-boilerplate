@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const PurchaseSchema = new mongoose.Schema({
   id: {
-    type: Number,
+    type: String,
     required: true,
   },
   channel: {
@@ -37,4 +37,6 @@ PurchaseSchema.pre('validate', function (next) {
   next();
 });
 
-export default PurchaseSchema;
+const PurchaseModel = mongoose.model("Purchase", PurchaseSchema);
+
+export default PurchaseModel;

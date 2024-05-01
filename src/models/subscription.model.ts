@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const SubscriptionSchema = new mongoose.Schema({
   id: {
-    type: Number,
+    type: String,
     required: true,
   },
   plan: {
@@ -40,4 +40,6 @@ SubscriptionSchema.pre('validate', function (next) {
   next();
 });
 
-export default SubscriptionSchema;
+const SubscriptionModel = mongoose.model("Subscription", SubscriptionSchema);
+
+export default SubscriptionModel;

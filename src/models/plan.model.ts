@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const PlanSchema = new mongoose.Schema({
 	id: {
-		type: Number,
+		type: String,
 		required: true,
 	},
 	name: {
@@ -36,4 +36,6 @@ const PlanSchema = new mongoose.Schema({
 	},
 });
 
-export default PlanSchema;
+const PlanModel = mongoose.model("Plan", PlanSchema);
+
+export default PlanModel;

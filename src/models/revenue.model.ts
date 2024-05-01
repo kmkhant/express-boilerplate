@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const RevenueSchema = new mongoose.Schema({
   id: {
-    type: Number,
+    type: String,
     required: true,
   },
   admin: {
@@ -31,4 +31,6 @@ const RevenueSchema = new mongoose.Schema({
   },
 });
 
-export default RevenueSchema;
+const RevenueModel = mongoose.model("Revenue", RevenueSchema);
+
+export default RevenueModel;

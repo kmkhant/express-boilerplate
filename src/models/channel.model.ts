@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const ChannelSchema = new mongoose.Schema({
 	id: {
-		type: Number,
+		type: String,
 		required: true,
 	},
 	name: {
@@ -26,4 +26,6 @@ const ChannelSchema = new mongoose.Schema({
 	},
 });
 
-export default ChannelSchema;
+const ChannelModel = mongoose.model("Channel", ChannelSchema);
+
+export default ChannelModel;

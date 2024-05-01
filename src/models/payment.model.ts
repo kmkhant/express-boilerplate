@@ -10,7 +10,7 @@ enum PaymentProvider {
 
 const PaymentSchema = new mongoose.Schema({
 	id: {
-		type: Number,
+		type: String,
 		required: true,
 	},
   paymentProvider: PaymentProvider,
@@ -20,4 +20,6 @@ const PaymentSchema = new mongoose.Schema({
 	},
 });
 
-export default PaymentSchema;
+const PaymentModel = mongoose.model("Payment", PaymentSchema);
+
+export default PaymentModel;

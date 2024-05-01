@@ -2,7 +2,7 @@ import mongoose from "mongoose" ;
 
 const BotSchema = new mongoose.Schema({
   id: {
-    type: Number,
+    type: String,
     required: true,
   },
   name: {
@@ -19,4 +19,6 @@ const BotSchema = new mongoose.Schema({
   },
 });
 
-export default BotSchema;
+const BotModel = mongoose.model("Bot", BotSchema);
+
+export default BotModel;
