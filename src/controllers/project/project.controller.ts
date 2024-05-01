@@ -67,6 +67,7 @@ export const createProject = async (
 	}
 };
 
+// TODO - Implement updateProject function, still not finished
 export const updateProject = async (
 	req: Request,
 	res: Response
