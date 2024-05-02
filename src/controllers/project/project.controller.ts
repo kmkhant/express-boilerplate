@@ -343,6 +343,21 @@ export const deleteProject = async (
 	) {
 		return res.status(403).json({ message: "Forbidden" });
 	} else {
+		// delete channels in the project including removing bot from the channels
+		for (
+			let i = 0;
+			i < currentProject.channels.length;
+			i++
+		) {
+			await ChannelModel.findOneAndDelete({
+				_id: currentProject.channels[i],
+			});
+		}
+
+		// delete groups in the project including removing bot from the groups
+		// TODO - delete groups
+
+		// finally delete the project
 		await ProjectModel.findOneAndDelete({
 			_id: projectId,
 		});
