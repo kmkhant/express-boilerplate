@@ -19,13 +19,11 @@ const ChannelSchema = new mongoose.Schema({
 			ref: "User",
 		},
 	],
-	showMembers: {
-		type: Boolean,
-    default: false,
-		required: false,
-	},
 });
 
-const ChannelModel = mongoose.model("Channel", ChannelSchema);
+const ChannelModel = mongoose.model(
+	"Channel",
+	ChannelSchema
+);
 
 export default ChannelModel;
