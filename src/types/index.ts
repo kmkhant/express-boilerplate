@@ -3,3 +3,7 @@ export interface IUserInfo {
 	name: string;
 	username: string;
 }
+
+export interface IAuth extends Request {
+	userInfo: IUserInfo;
+}

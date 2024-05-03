@@ -1,10 +1,6 @@
 import mongoose from "mongoose";
 
 const PlanSchema = new mongoose.Schema({
-	id: {
-		type: String,
-		required: true,
-	},
 	name: {
 		type: String,
 		required: true,
@@ -34,6 +30,18 @@ const PlanSchema = new mongoose.Schema({
 	lifetime: {
 		type: Number,
 	},
+	channels: [
+		{
+			type: [mongoose.Schema.Types.ObjectId],
+			ref: "Channel",
+		},
+	],
+	groups: [
+		{
+			type: [mongoose.Schema.Types.ObjectId],
+			ref: "Group",
+		},
+	],
 });
 
 const PlanModel = mongoose.model("Plan", PlanSchema);

@@ -1,18 +1,38 @@
-import { Request, Response } from "express";
+import { Response } from "express";
+import { Request as JWTRequest } from "express-jwt";
 import ProjectModel from "@/models/project.model";
 import AdminModel from "@/models/admin.model";
-import { secureHash } from "@/utils/secureHash";
 import ChannelModel from "@/models/channel.model";
 
 // import types
-import { IUserInfo } from "@/types/";
+import { IAuth } from "@/types/";
 
 export const getProjectsByAdmin = async (
-	req: Request,
+	req: JWTRequest,
 	res: Response
 ) => {
+	const { userInfo } = req.auth as IAuth;
+
+	if (!userInfo) {
+		return res
+			.status(401)
+			.json({ message: "Unauthorized" });
+	}
+
 	try {
-		const projects = await ProjectModel.find();
+		const currentAdmin = await AdminModel.findOne({
+			id: userInfo.id,
+		});
+
+		if (!currentAdmin) {
+			return res
+				.status(404)
+				.json({ message: "Admin not found" });
+		}
+
+		const projects = await ProjectModel.find({
+			admin: currentAdmin._id,
+		});
 
 		return res.status(200).json(projects);
 	} catch (error) {
@@ -23,36 +43,42 @@ export const getProjectsByAdmin = async (
 };
 
 export const createProject = async (
-	req: Request,
+	req: JWTRequest,
 	res: Response
 ) => {
 	try {
+		const { userInfo } = req.auth as IAuth;
+
 		const {
 			name,
 			description,
-			userInfo,
 		}: {
 			name: string;
 			description: string;
-			userInfo: IUserInfo;
 		} = req.body;
 
-		if (!name || !description || !userInfo) {
+		if (!userInfo) {
+			return res
+				.status(401)
+				.json({ message: "Unauthorized" });
+		}
+
+		if (!name) {
 			return res
 				.status(400)
 				.json({ message: "Invalid Request" });
 		}
 
-		const secureId = secureHash(userInfo.id);
+		const adminId = userInfo.id;
 
 		// TODO - check if admin id is a valid telegram id if not create him as an admin
 		const currentAdmin = await AdminModel.findOne({
-			where: { id: secureId },
+			where: { id: adminId },
 		});
 
 		if (!currentAdmin) {
 			const newAdmin = await AdminModel.create({
-				id: secureId,
+				id: adminId,
 				name: userInfo.name,
 				username: userInfo.username,
 			});
@@ -63,12 +89,12 @@ export const createProject = async (
 			});
 			return res.status(200).json(project);
 		} else {
-			const project = await ProjectModel.create({
+			await ProjectModel.create({
 				name,
 				description,
 				admin: currentAdmin,
 			});
-			return res.status(200).json(project);
+			return res.status(200).json({ message: "OK" });
 		}
 	} catch (error) {
 		console.log(error);
@@ -81,11 +107,14 @@ export const createProject = async (
 
 // TODO - Implement updateProject function, still not finished
 export const updateProject = async (
-	req: Request,
+	req: JWTRequest,
 	res: Response
 ) => {
-	const { id } = req.params;
-	const { name, description, userInfo } = req.body;
+	const { userInfo } = req.auth as IAuth;
+
+	const { projectId } = req.params;
+
+	const { name, description } = req.body;
 
 	if (!userInfo) {
 		return res
@@ -93,53 +122,54 @@ export const updateProject = async (
 			.json({ message: "Unauthorized" });
 	}
 
-	if (!name || !description) {
+	if (name || description) {
+		// check current user is admin of	 the project
+		const adminId = userInfo.id;
+
+		let project = await ProjectModel.findOne({
+			_id: projectId,
+		}).populate("admin");
+
+		if (!project) {
+			return res
+				.status(404)
+				.json({ message: "Project not found" });
+		}
+
+		if (project.admin instanceof AdminModel) {
+			// check if the user is the admin of the project
+			if (project.admin.id !== adminId) {
+				return res
+					.status(403)
+					.json({ message: "Forbidden" });
+			}
+
+			// update the project
+			await ProjectModel.findOneAndUpdate(
+				{ _id: projectId },
+				{ name, description }
+			);
+		}
+		return res.status(200).json({ message: "OK" });
+	} else {
 		return res
 			.status(400)
 			.json({ message: "Invalid Request" });
 	}
-
-	// check current user is admin of	 the project
-	const adminId = secureHash(userInfo.id);
-
-	let project = await ProjectModel.findOne({
-		_id: id,
-	}).populate("admin");
-
-	if (!project) {
-		return res
-			.status(404)
-			.json({ message: "Project not found" });
-	}
-
-	if (project.admin instanceof AdminModel) {
-		// check if the user is the admin of the project
-		if (project.admin.id !== adminId) {
-			return res.status(403).json({ message: "Forbidden" });
-		}
-
-		// update the project
-		await ProjectModel.findOneAndUpdate(
-			{ _id: id },
-			{ name, description }
-		);
-	}
-
-	return res.status(200).json({ message: "OK" });
 };
 
 // add channel to project
 export const addChannelToProject = async (
-	req: Request,
+	req: JWTRequest,
 	res: Response
 ) => {
-	const { id } = req.params;
-	const {
-		channelId,
-		channelName,
-		channelDescription,
-		userInfo,
-	} = req.body;
+	const { userInfo } = req.auth as IAuth;
+
+	const { projectId } = req.params;
+	const { channelId, channelName, channelDescription } =
+		req.body;
+
+	const adminId = userInfo.id;
 
 	if (!userInfo) {
 		return res
@@ -147,20 +177,20 @@ export const addChannelToProject = async (
 			.json({ message: "Unauthorized" });
 	}
 
-	if (!channelId || !id || !channelName) {
+	if (!channelId || !projectId || !channelName) {
 		return res
 			.status(400)
 			.json({ message: "Invalid Request" });
 	}
 
 	const currentProject = await ProjectModel.findOne({
-		_id: id,
+		_id: projectId,
 	}).populate("admin");
 
 	if (
 		currentProject &&
 		currentProject.admin instanceof AdminModel &&
-		currentProject.admin.id !== secureHash(userInfo.id)
+		currentProject.admin.id !== adminId
 	) {
 		return res.status(403).json({ message: "Forbidden" });
 	}
@@ -171,10 +201,8 @@ export const addChannelToProject = async (
 			.json({ message: "Project not found" });
 	}
 
-	const secureChannelId = secureHash(channelId);
-
 	const currentChannel = await ChannelModel.findOne({
-		id: secureChannelId,
+		id: channelId,
 	});
 
 	if (currentChannel && currentChannel._id) {
@@ -193,14 +221,14 @@ export const addChannelToProject = async (
 
 	if (!currentChannel) {
 		const newChannel = await ChannelModel.create({
-			id: secureChannelId,
+			id: channelId,
 			name: channelName,
 			description: channelDescription,
 		});
 
 		await ProjectModel.findOneAndUpdate(
 			{
-				_id: id,
+				_id: projectId,
 			},
 			{
 				$push: { channels: newChannel },
@@ -216,11 +244,12 @@ export const addChannelToProject = async (
 };
 
 export const deleteChannelFromProject = async (
-	req: Request,
+	req: JWTRequest,
 	res: Response
 ) => {
+	const { userInfo } = req.auth as IAuth;
+
 	const { projectId, channelId } = req.params; // project id
-	const { userInfo } = req.body;
 
 	if (!userInfo) {
 		return res
@@ -234,8 +263,10 @@ export const deleteChannelFromProject = async (
 			.json({ message: "Invalid Request" });
 	}
 
+	const adminId = userInfo.id;
+
 	const currentAdmin = await AdminModel.findOne({
-		id: secureHash(userInfo.id),
+		id: adminId,
 	});
 
 	if (!currentAdmin) {
@@ -252,20 +283,17 @@ export const deleteChannelFromProject = async (
 			.json({ message: "Project not found" });
 	}
 
-	const secureAdminId = secureHash(userInfo.id);
-	const secureChannelId = channelId;
-
 	// check if the user is the admin of the project
 	if (
 		currentProject &&
 		currentProject.admin instanceof AdminModel &&
-		currentAdmin.id !== secureAdminId
+		currentAdmin.id !== adminId
 	) {
 		return res.status(403).json({ message: "Forbidden" });
 	}
 
 	const currentChannel = await ChannelModel.findOne({
-		id: secureChannelId,
+		id: channelId,
 	});
 
 	if (!currentChannel) {
@@ -290,7 +318,7 @@ export const deleteChannelFromProject = async (
 		);
 
 		await ChannelModel.findOneAndDelete({
-			id: secureChannelId,
+			id: channelId,
 		});
 
 		return res
@@ -305,12 +333,12 @@ export const deleteChannelFromProject = async (
 
 // delete project
 export const deleteProject = async (
-	req: Request,
+	req: JWTRequest,
 	res: Response
 ) => {
-	const projectId = req.params.projectId;
+	const { userInfo } = req.auth as IAuth;
 
-	const { userInfo }: { userInfo: IUserInfo } = req.body;
+	const projectId = req.params.projectId;
 
 	if (!projectId || !userInfo) {
 		return res
@@ -318,8 +346,10 @@ export const deleteProject = async (
 			.json({ message: "Invalid Request" });
 	}
 
+	const adminId = userInfo.id;
+
 	const currentAdmin = await AdminModel.findOne({
-		id: secureHash(userInfo.id),
+		id: adminId,
 	});
 
 	if (!currentAdmin) {
@@ -339,7 +369,7 @@ export const deleteProject = async (
 	if (
 		currentProject &&
 		currentProject.admin instanceof AdminModel &&
-		currentAdmin.id !== secureHash(userInfo.id)
+		currentAdmin.id !== adminId
 	) {
 		return res.status(403).json({ message: "Forbidden" });
 	} else {
@@ -368,15 +398,14 @@ export const deleteProject = async (
 };
 
 export const transferProject = async (
-	req: Request,
+	req: JWTRequest,
 	res: Response
 ) => {
 	const { projectId } = req.params;
+	const { userInfo } = req.auth as IAuth;
 
-	const {
-		userInfo,
-		newAdminId,
-	}: { userInfo: IUserInfo; newAdminId: string } = req.body;
+	// TODO - find if new admin is valid telegram user
+	const { newAdminId }: { newAdminId: string } = req.body;
 
 	if (!projectId || !newAdminId) {
 		return res
@@ -400,7 +429,7 @@ export const transferProject = async (
 	// check if the curent user is the admin of the project
 	if (
 		currentProject.admin instanceof AdminModel &&
-		currentProject.admin.id !== secureHash(userInfo.id)
+		currentProject.admin.id !== userInfo.id
 	) {
 		return res
 			.status(403)
@@ -410,7 +439,7 @@ export const transferProject = async (
 	// check if the new admin is the current admin of the project
 	if (
 		currentProject.admin instanceof AdminModel &&
-		currentProject.admin.id === secureHash(newAdminId)
+		currentProject.admin.id === newAdminId
 	) {
 		return res.status(500).json({
 			message:
@@ -419,7 +448,7 @@ export const transferProject = async (
 	}
 
 	const newAdmin = await AdminModel.findOne({
-		id: secureHash(newAdminId),
+		id: newAdminId,
 	});
 
 	// if admin is not registered in database, create a new admin
@@ -428,7 +457,7 @@ export const transferProject = async (
 		// extract userinfo from user id provided
 		// TODO - implement this function
 		const newAdminModel = await AdminModel.create({
-			id: secureHash(newAdminId),
+			id: newAdminId,
 		});
 
 		await ProjectModel.findOneAndUpdate(
