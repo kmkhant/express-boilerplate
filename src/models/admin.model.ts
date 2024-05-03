@@ -7,11 +7,11 @@ const AdminSchema = new mongoose.Schema({
 	},
 	name: {
 		type: String,
-		required: true,
+		required: false,
 	},
 	username: {
 		type: String,
-		required: true,
+		required: false,
 	},
 	channels: [
 		{
