@@ -6,6 +6,7 @@ import ChannelModel from "@/models/channel.model";
 import PlanModel from "@/models/plan.model";
 import ProjectModel from "@/models/project.model";
 import { IAuth } from "@/types";
+import AdminModel from "@/models/admin.model";
 
 interface IAddPlan {
 	name: string;
@@ -14,7 +15,7 @@ interface IAddPlan {
 	price: number;
 }
 
-export const addPlan = async (
+export const addPlanToProject = async (
 	req: JWTRequest,
 	res: Response
 ) => {
@@ -79,7 +80,6 @@ export const addPlan = async (
 	}
 };
 
-// TODO - not channel, add plan to project
 export const addChannelToPlan = async (
 	req: JWTRequest,
 	res: Response
@@ -91,13 +91,36 @@ export const addChannelToPlan = async (
 			.status(401)
 			.json({ message: "Unauthorized" });
 	}
+	const { planId } = req.params;
+	const { channelId, projectId } = req.body;
 
-	const { planId, channelId } = req.body;
-
-	if (!planId || !channelId) {
+	if (!planId || !channelId || !projectId) {
 		return res
 			.status(400)
 			.json({ message: "Invalid Request" });
+	}
+
+	const currentProject = await ProjectModel.findOne({
+		_id: projectId,
+	});
+
+	const adminId = userInfo.id;
+
+	if (!currentProject) {
+		return res
+			.status(404)
+			.json({ message: "Project not found" });
+	}
+
+	// check if requested user is admin of project
+	if (
+		currentProject &&
+		currentProject.admin instanceof AdminModel &&
+		currentProject.admin.id !== adminId
+	) {
+		return res
+			.status(401)
+			.json({ message: "You don't own this project" });
 	}
 
 	const channelToAdd = await ChannelModel.findOne({
@@ -111,7 +134,7 @@ export const addChannelToPlan = async (
 	}
 
 	const currentPlan = await PlanModel.findOne({
-		id: planId,
+		_id: planId,
 	});
 
 	if (!currentPlan) {
@@ -130,4 +153,87 @@ export const addChannelToPlan = async (
 			},
 		}
 	);
+
+	return res.status(200).json({ message: "Channel added" });
+};
+
+export const removeChannelFromPlan = async (
+	req: JWTRequest,
+	res: Response
+) => {
+	try {
+		const { planId } = req.params;
+		const { channelId, projectId } = req.body;
+		const { userInfo } = req.auth as IAuth;
+
+		if (!planId || !channelId || !projectId) {
+			return res
+				.status(400)
+				.json({ message: "Invalid Request" });
+		}
+
+		const adminId = userInfo.id;
+
+		const currentProject = await ProjectModel.findOne({
+			_id: projectId,
+		});
+
+		if (!currentProject) {
+			return res
+				.status(404)
+				.json({ message: "Project not found" });
+		}
+
+		// check if requested user is admin of project
+		if (
+			currentProject &&
+			currentProject.admin instanceof AdminModel &&
+			currentProject.admin.id !== adminId
+		) {
+			return res
+				.status(401)
+				.json({ message: "You don't own this project" });
+		}
+
+		const channelToRemove = await ChannelModel.findOne({
+			id: channelId,
+		});
+
+		if (!channelToRemove) {
+			return res
+				.status(404)
+				.json({ message: "Channel not found" });
+		}
+
+		const currentPlan = await PlanModel.findOne({
+			_id: planId,
+		});
+
+		if (!currentPlan) {
+			return res
+				.status(404)
+				.json({ message: "Plan not found" });
+		}
+
+		await PlanModel.updateOne(
+			{
+				_id: planId,
+			},
+			{
+				$pull: {
+					channels: channelToRemove._id,
+				},
+			}
+		);
+
+		return res
+			.status(200)
+			.json({ message: "Channel removed" });
+	} catch (error) {
+		console.log(error);
+
+		return res
+			.status(500)
+			.json({ message: "Internal Server Error" });
+	}
 };

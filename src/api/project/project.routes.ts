@@ -20,9 +20,9 @@ router.delete("/delete/:projectId", deleteProject);
 router.patch("/transfer/:projectId", transferProject);
 
 // channel CRUD
-router.put("/addChannel/:projectId", addChannelToProject);
+router.post("/:projectId/addChannel", addChannelToProject);
 router.delete(
-	"/deleteChannel/:projectId/:channelId",
+	"/:projectId/deleteChannel/:channelId",
 	deleteChannelFromProject
 );
 
