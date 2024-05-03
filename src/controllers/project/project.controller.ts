@@ -343,7 +343,7 @@ export const deleteProject = async (
 	) {
 		return res.status(403).json({ message: "Forbidden" });
 	} else {
-		// delete channels in the project including removing bot from the channels
+		// delete channels in the project
 		for (
 			let i = 0;
 			i < currentProject.channels.length;
@@ -354,7 +354,7 @@ export const deleteProject = async (
 			});
 		}
 
-		// delete groups in the project including removing bot from the groups
+		// delete groups in the project
 		// TODO - delete groups
 
 		// finally delete the project
@@ -364,5 +364,91 @@ export const deleteProject = async (
 		return res
 			.status(200)
 			.json({ message: "OK, deleted the project" });
+	}
+};
+
+export const transferProject = async (
+	req: Request,
+	res: Response
+) => {
+	const { projectId } = req.params;
+
+	const {
+		userInfo,
+		newAdminId,
+	}: { userInfo: IUserInfo; newAdminId: string } = req.body;
+
+	if (!projectId || !newAdminId) {
+		return res
+			.status(400)
+			.json({ message: "Invalid Request" });
+	}
+
+	const currentProject = await ProjectModel.findOne({
+		_id: projectId,
+	}).populate("admin");
+
+	if (!currentProject) {
+		return res
+			.status(404)
+			.json({ message: "Project not found" });
+	}
+
+	// console.log(currentProject);
+	// console.log(secureHash(userInfo.id));
+
+	// check if the curent user is the admin of the project
+	if (
+		currentProject.admin instanceof AdminModel &&
+		currentProject.admin.id !== secureHash(userInfo.id)
+	) {
+		return res
+			.status(403)
+			.json({ message: "You don't own this project." });
+	}
+
+	// check if the new admin is the current admin of the project
+	if (
+		currentProject.admin instanceof AdminModel &&
+		currentProject.admin.id === secureHash(newAdminId)
+	) {
+		return res.status(500).json({
+			message:
+				"New admin is the same person as current admin of the project",
+		});
+	}
+
+	const newAdmin = await AdminModel.findOne({
+		id: secureHash(newAdminId),
+	});
+
+	// if admin is not registered in database, create a new admin
+	// extract data using username @username
+	if (!newAdmin) {
+		// extract userinfo from user id provided
+		// TODO - implement this function
+		const newAdminModel = await AdminModel.create({
+			id: secureHash(newAdminId),
+		});
+
+		await ProjectModel.findOneAndUpdate(
+			{ id: projectId },
+			{ admin: newAdminModel }
+		);
+
+		return res.status(200).json({
+			message:
+				"newAdmin has been created. this project has been transferred to the new admin",
+		});
+	} else {
+		await ProjectModel.findOneAndUpdate(
+			{ _id: projectId },
+			{ admin: newAdmin }
+		);
+
+		return res.status(200).json({
+			message:
+				"this project has been transferred to the new admin",
+		});
 	}
 };
