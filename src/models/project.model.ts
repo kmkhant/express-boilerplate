@@ -35,6 +35,12 @@ const ProjectSchema = new mongoose.Schema({
 			ref: "Payment",
 		},
 	],
+	plans: [
+		{
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Plan",
+		},
+	],
 });
 
 const Project = mongoose.model("Project", ProjectSchema);

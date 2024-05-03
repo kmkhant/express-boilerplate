@@ -1,4 +1,16 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import mongoose from "mongoose";
+
+enum PLAN_DURATION {
+	WEEK = "week",
+	TWO_WEEKS = "two_weeks",
+	MONTH = "month",
+	TWO_MONTH = "two_months",
+	THREE_MONTH = "three_months",
+	SIX_MONTH = "six_months",
+	YEAR = "year",
+	LIFETIME = "lifetime",
+}
 
 const PlanSchema = new mongoose.Schema({
 	name: {
@@ -8,27 +20,14 @@ const PlanSchema = new mongoose.Schema({
 	description: {
 		type: String,
 	},
-	price_per_week: {
-		type: Number,
+	plan_duration: {
+		type: String,
+		enum: Object.values(PLAN_DURATION),
+		required: true,
 	},
-	price_per_two_weeks: {
+	price: {
 		type: Number,
-	},
-	price_per_month: {
-		type: Number,
-	},
-	price_per_two_months: {},
-	price_per_three_months: {
-		type: Number,
-	},
-	price_per_six_months: {
-		type: Number,
-	},
-	price_per_year: {
-		type: Number,
-	},
-	lifetime: {
-		type: Number,
+		required: true,
 	},
 	channels: [
 		{
