@@ -19,6 +19,14 @@ const ChannelSchema = new mongoose.Schema({
 			ref: "User",
 		},
 	],
+	project: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Project",
+	},
+	bot: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Bot",
+	},
 });
 
 const ChannelModel = mongoose.model(
