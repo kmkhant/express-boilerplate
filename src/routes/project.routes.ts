@@ -10,14 +10,16 @@ import {
 	transferProject,
 } from "@/controllers/project.controller";
 
+import { addBotToProject } from "@/controllers/bot.controller";
+
 const router = express.Router();
 
 // projects CRUD
 router.post("/create", createProject);
 router.get("/", getProjectsByAdmin);
-router.patch("/update/:projectId", updateProject);
-router.delete("/delete/:projectId", deleteProject);
-router.patch("/transfer/:projectId", transferProject);
+router.patch("/:projectId/update", updateProject);
+router.delete("/:projectId/delete", deleteProject);
+router.patch("/:projectId/transfer", transferProject);
 
 // channel CRUD
 router.post("/:projectId/addChannel", addChannelToProject);
@@ -25,5 +27,8 @@ router.delete(
 	"/:projectId/deleteChannel/:channelId",
 	deleteChannelFromProject
 );
+
+// bot CRUD to project
+router.post("/:projectId/addBot", addBotToProject); // update bot token if bot already exists
 
 export default router;
