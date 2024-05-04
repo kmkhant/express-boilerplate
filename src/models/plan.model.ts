@@ -41,6 +41,10 @@ const PlanSchema = new mongoose.Schema({
 			ref: "Group",
 		},
 	],
+	admin: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Admin",
+	},
 });
 
 const PlanModel = mongoose.model("Plan", PlanSchema);

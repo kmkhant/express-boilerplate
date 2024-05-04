@@ -51,11 +51,14 @@ export const addPlanToProject = async (
 				.json({ message: "Include a plan price" });
 		}
 
+		const admin = currentProject.admin;
+
 		const plan = await PlanModel.create({
 			name,
 			description,
 			plan_duration,
 			price,
+			admin,
 		});
 
 		// add to project plans
@@ -229,6 +232,131 @@ export const removeChannelFromPlan = async (
 		return res
 			.status(200)
 			.json({ message: "Channel removed" });
+	} catch (error) {
+		console.log(error);
+
+		return res
+			.status(500)
+			.json({ message: "Internal Server Error" });
+	}
+};
+
+export const editPlanNameOrDescription = async (
+	req: JWTRequest,
+	res: Response
+) => {
+	const { userInfo } = req.auth as IAuth;
+	const { planId } = req.params;
+	const { name, description } = req.body;
+
+	try {
+		if (!planId) {
+			return res
+				.status(400)
+				.json({ message: "Invalid Request" });
+		}
+
+		if (name || description) {
+			const currentPlan = await PlanModel.findOne({
+				_id: planId,
+			});
+
+			if (!currentPlan) {
+				return res
+					.status(404)
+					.json({ message: "Plan not found" });
+			}
+
+			const currentAdmin = await AdminModel.findOne({
+				id: userInfo.id,
+			});
+
+			if (!currentAdmin) {
+				return res
+					.status(404)
+					.json({ message: "Admin not found" });
+			}
+
+			if (!currentAdmin._id.equals(currentPlan.admin)) {
+				return res
+					.status(401)
+					.json({ message: "You don't own this plan" });
+			}
+
+			await PlanModel.updateOne(
+				{
+					_id: planId,
+				},
+				{
+					name,
+					description,
+				}
+			);
+
+			return res
+				.status(200)
+				.json({ message: "Plan update success" });
+		} else {
+			return res
+				.status(400)
+				.json({ message: "Invalid Request" });
+		}
+	} catch (error) {
+		console.log(error);
+
+		return res
+			.status(500)
+			.json({ message: "Internal Server Error" });
+	}
+};
+
+export const deletePlan = async (
+	req: JWTRequest,
+	res: Response
+) => {
+	const { userInfo } = req.auth as IAuth;
+	const { planId } = req.params;
+
+	try {
+		if (!planId) {
+			return res
+				.status(400)
+				.json({ message: "Invalid Request" });
+		}
+
+		const currentPlan = await PlanModel.findOne({
+			_id: planId,
+		});
+
+		if (!currentPlan) {
+			return res
+				.status(404)
+				.json({ message: "Plan not found" });
+		}
+
+		const currentAdmin = await AdminModel.findOne({
+			id: userInfo.id,
+		});
+
+		if (!currentAdmin) {
+			return res
+				.status(404)
+				.json({ message: "Admin not found" });
+		}
+
+		if (!currentAdmin._id.equals(currentPlan.admin)) {
+			return res
+				.status(401)
+				.json({ message: "You don't own this plan" });
+		}
+
+		await PlanModel.deleteOne({
+			_id: planId,
+		});
+
+		return res
+			.status(200)
+			.json({ message: "Plan deleted" });
 	} catch (error) {
 		console.log(error);
 
