@@ -9,6 +9,7 @@ import {
 	deleteProject,
 	transferProject,
 	addGroupToProject,
+	removeGroupFromProject,
 } from "@/controllers/project.controller";
 
 import { addBotToProject } from "@/controllers/bot.controller";
@@ -31,6 +32,10 @@ router.delete(
 
 // group CRUD
 router.post("/:projectId/addGroup", addGroupToProject);
+router.patch(
+	"/:projectId/removeGroup",
+	removeGroupFromProject
+);
 
 // bot CRUD to project
 router.post("/:projectId/addBot", addBotToProject); // update bot token if bot already exists

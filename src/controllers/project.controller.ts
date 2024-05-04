@@ -489,7 +489,7 @@ export const addGroupToProject = async (
 ) => {
 	const { userInfo } = req.auth as IAuth;
 	const { projectId } = req.params;
-	const { groupId, groupName, groupDescription } = req.body;
+	const { groupId, groupName } = req.body;
 
 	if (!projectId || !groupId || !groupName) {
 		return res
@@ -521,39 +521,153 @@ export const addGroupToProject = async (
 
 	if (currentProject.admin.equals(currentAdmin._id)) {
 		// check if group already exists in the project
-		const group = await GroupModel.findOne({
+		const currentGroup = await GroupModel.findOne({
 			id: groupId,
 			project: currentProject,
 		});
 
-		if (group) {
-			return res.status(400).json({
-				message: "Group already exists in the project",
+		if (!currentGroup) {
+			const newGroup = await GroupModel.create({
+				id: groupId,
+				name: groupName,
+				project: currentProject,
+			});
+
+			await ProjectModel.findOneAndUpdate(
+				{
+					_id: projectId,
+				},
+				{
+					$addToSet: {
+						groups: newGroup,
+					},
+				}
+			);
+
+			return res.status(200).json({
+				message: "OK, added group to the project",
+			});
+		} else {
+			const groupExists = currentProject.groups.some(
+				(group) => group.equals(currentGroup._id)
+			);
+
+			if (groupExists) {
+				return res.status(400).json({
+					message: "Group already exists in the project",
+				});
+			} else {
+				await ProjectModel.findOneAndUpdate(
+					{
+						_id: projectId,
+					},
+					{
+						$addToSet: {
+							groups: currentGroup,
+						},
+					}
+				);
+
+				return res.status(200).json({
+					message: "OK, added group to the project.",
+				});
+			}
+		}
+	} else {
+		return res
+			.status(403)
+			.json({ message: "You don't own that project." });
+	}
+};
+
+export const removeGroupFromProject = async (
+	req: JWTRequest,
+	res: Response
+) => {
+	const { userInfo } = req.auth as IAuth;
+	const { projectId } = req.params;
+	const { groupId } = req.body;
+
+	if (!projectId || !groupId) {
+		return res
+			.status(400)
+			.json({ message: "Invalid Request" });
+	}
+
+	const adminId = userInfo.id;
+
+	const currentAdmin = await AdminModel.findOne({
+		id: adminId,
+	});
+
+	if (!currentAdmin) {
+		return res
+			.status(401)
+			.json({ message: "Unauthorized" });
+	}
+
+	const currentProject = await ProjectModel.findOne({
+		_id: projectId,
+	});
+
+	if (!currentProject) {
+		return res
+			.status(404)
+			.json({ message: "project not found" });
+	}
+
+	if (!currentProject.admin.equals(currentAdmin._id)) {
+		return res
+			.status(401)
+			.json({ message: "You don't own this project." });
+	}
+
+	try {
+		const currentGroup = await GroupModel.findOne({
+			id: groupId,
+		});
+
+		if (!currentGroup) {
+			return res
+				.status(404)
+				.json({ message: "Group not found." });
+		}
+
+		const groupExists = currentProject.groups.some(
+			(group) => group.equals(currentGroup._id)
+		);
+
+		if (!groupExists) {
+			return res.status(200).json({
+				message: "Group is not in the project",
 			});
 		}
 
-		const newGroup = await GroupModel.create({
-			id: groupId,
-			name: groupName,
-			description: groupDescription,
-			project: currentProject,
-		});
-
+		// detach group from project
 		await ProjectModel.findOneAndUpdate(
 			{
 				_id: projectId,
 			},
 			{
-				$push: { groups: newGroup },
+				$pull: {
+					groups: currentGroup,
+				},
 			}
 		);
 
+		// delete group model
+		await GroupModel.findOneAndDelete({
+			id: groupId,
+		});
+
 		return res
 			.status(200)
-			.json({ message: "OK, added group to the project" });
-	} else {
-		return res
-			.status(403)
-			.json({ message: "You don't own that project." });
+			.json({ message: "removed group from the project" });
+	} catch (error) {
+		console.log(error);
+
+		return res.status(500).json({
+			message: "Internal Server Error",
+		});
 	}
 };
