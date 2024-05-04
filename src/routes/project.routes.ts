@@ -8,7 +8,7 @@ import {
 	deleteChannelFromProject,
 	deleteProject,
 	transferProject,
-} from "./project.controller";
+} from "@/controllers/project.controller";
 
 const router = express.Router();
 

@@ -8,8 +8,8 @@ import MessageResponse from "./interfaces/MessageResponse";
 import { authMiddleware } from "./middlewares/auth";
 
 // Routes
-import projectRoutes from "@/api/project/project.routes";
-import planRoutes from "@/api/plan/plan.routes";
+import projectRoutes from "@/routes/project.routes";
+import planRoutes from "@/routes/plan.routes";
 
 require("dotenv").config();
 

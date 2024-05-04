@@ -7,7 +7,7 @@ import {
 	removeChannelFromPlan,
 	editPlanNameOrDescription,
 	deletePlan,
-} from "./plan.controller";
+} from "@/controllers/plan.controller";
 
 const router = express.Router();
 
