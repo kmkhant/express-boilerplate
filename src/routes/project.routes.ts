@@ -8,6 +8,7 @@ import {
 	deleteChannelFromProject,
 	deleteProject,
 	transferProject,
+	addGroupToProject,
 } from "@/controllers/project.controller";
 
 import { addBotToProject } from "@/controllers/bot.controller";
@@ -27,6 +28,9 @@ router.delete(
 	"/:projectId/deleteChannel/:channelId",
 	deleteChannelFromProject
 );
+
+// group CRUD
+router.post("/:projectId/addGroup", addGroupToProject);
 
 // bot CRUD to project
 router.post("/:projectId/addBot", addBotToProject); // update bot token if bot already exists

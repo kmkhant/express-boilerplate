@@ -6,6 +6,7 @@ import ChannelModel from "@/models/channel.model";
 
 // import types
 import { IAuth } from "@/types/";
+import GroupModel from "@/models/group.model";
 
 export const getProjectsByAdmin = async (
 	req: JWTRequest,
@@ -479,5 +480,80 @@ export const transferProject = async (
 			message:
 				"this project has been transferred to the new admin",
 		});
+	}
+};
+
+export const addGroupToProject = async (
+	req: JWTRequest,
+	res: Response
+) => {
+	const { userInfo } = req.auth as IAuth;
+	const { projectId } = req.params;
+	const { groupId, groupName, groupDescription } = req.body;
+
+	if (!projectId || !groupId || !groupName) {
+		return res
+			.status(400)
+			.json({ message: "Invalid Request" });
+	}
+
+	const adminId = userInfo.id;
+
+	const currentAdmin = await AdminModel.findOne({
+		id: adminId,
+	});
+
+	if (!currentAdmin) {
+		return res
+			.status(403)
+			.json({ message: "Create a project first" });
+	}
+
+	const currentProject = await ProjectModel.findOne({
+		_id: projectId,
+	});
+
+	if (!currentProject) {
+		return res
+			.status(404)
+			.json({ message: "Project not found" });
+	}
+
+	if (currentProject.admin.equals(currentAdmin._id)) {
+		// check if group already exists in the project
+		const group = await GroupModel.findOne({
+			id: groupId,
+			project: currentProject,
+		});
+
+		if (group) {
+			return res.status(400).json({
+				message: "Group already exists in the project",
+			});
+		}
+
+		const newGroup = await GroupModel.create({
+			id: groupId,
+			name: groupName,
+			description: groupDescription,
+			project: currentProject,
+		});
+
+		await ProjectModel.findOneAndUpdate(
+			{
+				_id: projectId,
+			},
+			{
+				$push: { groups: newGroup },
+			}
+		);
+
+		return res
+			.status(200)
+			.json({ message: "OK, added group to the project" });
+	} else {
+		return res
+			.status(403)
+			.json({ message: "You don't own that project." });
 	}
 };
