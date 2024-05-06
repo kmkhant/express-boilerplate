@@ -11,6 +11,7 @@ import { authMiddleware } from "./middlewares/auth";
 import projectRoutes from "@/routes/project.routes";
 import planRoutes from "@/routes/plan.routes";
 import subscriptionRoutes from "@/routes/subscription.routes";
+import webHookRoutes from "@/routes/webhook.routes";
 
 require("dotenv").config();
 
@@ -22,6 +23,9 @@ app.use(morgan("dev"));
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+
+app.use("/api/v1/bot/webhook", webHookRoutes);
+
 app.use(authMiddleware);
 
 // DB connection
@@ -37,6 +41,8 @@ app.get<{}, MessageResponse>("/", (req, res) => {
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/subscriptions/plan", planRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
+
+// web hook
 
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);

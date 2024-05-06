@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
 const BotSchema = new mongoose.Schema({
+	id: {
+		type: String,
+		required: true,
+	},
 	name: {
 		type: String,
 		required: true,
@@ -9,7 +13,16 @@ const BotSchema = new mongoose.Schema({
 		type: String,
 		required: true,
 	},
+	project: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Project",
+		required: true,
+	},
 	token: {
+		type: String,
+		required: true,
+	},
+	webhookURL: {
 		type: String,
 		required: true,
 	},
