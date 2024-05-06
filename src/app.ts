@@ -10,6 +10,7 @@ import { authMiddleware } from "./middlewares/auth";
 // Routes
 import projectRoutes from "@/routes/project.routes";
 import planRoutes from "@/routes/plan.routes";
+import subscriptionRoutes from "@/routes/subscription.routes";
 
 require("dotenv").config();
 
@@ -35,6 +36,7 @@ app.get<{}, MessageResponse>("/", (req, res) => {
 // routes
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/subscriptions/plan", planRoutes);
+app.use("/api/v1/subscriptions", subscriptionRoutes);
 
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import mongoose from "mongoose";
 
-enum PLAN_DURATION {
+export enum PLAN_DURATION {
 	WEEK = "week",
 	TWO_WEEKS = "two_weeks",
 	MONTH = "month",

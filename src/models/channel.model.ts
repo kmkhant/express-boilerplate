@@ -27,6 +27,10 @@ const ChannelSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Bot",
 	},
+	admin: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "User",
+	},
 });
 
 const ChannelModel = mongoose.model(

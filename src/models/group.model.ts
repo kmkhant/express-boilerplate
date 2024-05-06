@@ -26,6 +26,10 @@ const GroupSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Bot",
 	},
+	admin: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "User",
+	},
 });
 
 const GroupModel = mongoose.model("Group", GroupSchema);

@@ -7,3 +7,7 @@ export interface IUserInfo {
 export interface IAuth extends Request {
 	userInfo: IUserInfo;
 }
+
+export interface IAuthBot extends Request {
+	botSecret: string;
+}
