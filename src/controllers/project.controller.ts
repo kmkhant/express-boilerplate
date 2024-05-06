@@ -172,6 +172,17 @@ export const addChannelToProject = async (
 
 	const adminId = userInfo.id;
 
+	const currentAdmin = await AdminModel.findOne({
+		id: adminId,
+	});
+
+	if (!currentAdmin) {
+		return res.status(403).json({
+			message:
+				"I can't find you. please, create a project first.",
+		});
+	}
+
 	if (!userInfo) {
 		return res
 			.status(401)
@@ -186,20 +197,19 @@ export const addChannelToProject = async (
 
 	const currentProject = await ProjectModel.findOne({
 		_id: projectId,
-	}).populate("admin");
-
-	if (
-		currentProject &&
-		currentProject.admin instanceof AdminModel &&
-		currentProject.admin.id !== adminId
-	) {
-		return res.status(403).json({ message: "Forbidden" });
-	}
+	});
 
 	if (!currentProject) {
 		return res
 			.status(404)
 			.json({ message: "Project not found" });
+	}
+
+	if (
+		currentProject &&
+		!currentProject.admin.equals(currentAdmin._id)
+	) {
+		return res.status(403).json({ message: "Forbidden" });
 	}
 
 	const currentChannel = await ChannelModel.findOne({
@@ -217,14 +227,26 @@ export const addChannelToProject = async (
 		if (channelExists)
 			return res
 				.status(400)
-				.json({ message: "Channel already exists." });
+				.json({ message: "Channel is already added to the project" });
+		else {
+			await ProjectModel.findOneAndUpdate(
+				{
+					_id: projectId,
+				},
+				{
+					$push: { channels: currentChannel },
+				}
+			);
+		}
 	}
 
 	if (!currentChannel) {
+		// if channel is not found, create a new channel model and connect it to project
 		const newChannel = await ChannelModel.create({
 			id: channelId,
 			name: channelName,
 			description: channelDescription,
+			admin: currentAdmin,
 		});
 
 		await ProjectModel.findOneAndUpdate(
@@ -454,6 +476,7 @@ export const transferProject = async (
 
 	// if admin is not registered in database, create a new admin
 	// extract data using username @username
+	// make sure you validate the user is a valid telegram user
 	if (!newAdmin) {
 		// extract userinfo from user id provided
 		// TODO - implement this function
@@ -524,6 +547,7 @@ export const addGroupToProject = async (
 		const currentGroup = await GroupModel.findOne({
 			id: groupId,
 			project: currentProject,
+			admin: currentAdmin,
 		});
 
 		if (!currentGroup) {
@@ -531,6 +555,7 @@ export const addGroupToProject = async (
 				id: groupId,
 				name: groupName,
 				project: currentProject,
+				admin: currentAdmin,
 			});
 
 			await ProjectModel.findOneAndUpdate(
