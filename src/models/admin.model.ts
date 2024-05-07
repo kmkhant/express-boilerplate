@@ -6,7 +6,7 @@ const AdminSchema = new mongoose.Schema({
 		required: true,
 	},
 	adminChatId: {
-		type: String,
+		type: Number,
 		required: true,
 	},
 	name: {
