@@ -123,6 +123,7 @@ export const createSubscription = async (
 				// add user, and add subscription
 				const newUser = await UserModel.create({
 					id: user.id,
+					chatId: user.chatId,
 					name: user.name,
 					username: user.username,
 				});
@@ -155,8 +156,8 @@ export const createSubscription = async (
 			} else {
 				const currentSubscription =
 					await SubscriptionModel.findOne({
-						user: currentUser._id,
-						channel: currentChannel._id,
+						user: currentUser,
+						channel: currentChannel,
 					});
 
 				if (currentSubscription) {
@@ -170,9 +171,9 @@ export const createSubscription = async (
 				const newSubscription =
 					await SubscriptionModel.create({
 						chatId,
-						plan: currentPlan._id,
-						channel: currentChannel._id,
-						user: currentUser._id,
+						plan: currentPlan,
+						channel: currentChannel,
+						user: currentUser,
 						startDate,
 						endDate,
 					});
@@ -210,6 +211,7 @@ export const createSubscription = async (
 				// add user, and add subscription
 				const newUser = await UserModel.create({
 					id: user.id,
+					chatId: user.chatId,
 					name: user.name,
 					username: user.username,
 				});
@@ -217,9 +219,9 @@ export const createSubscription = async (
 				const newSubscription =
 					await SubscriptionModel.create({
 						chatId,
-						plan: currentPlan._id,
-						group: currentGroup._id,
-						user: newUser._id,
+						plan: currentPlan,
+						group: currentGroup,
+						user: newUser,
 						startDate,
 						endDate,
 					});
@@ -244,9 +246,9 @@ export const createSubscription = async (
 				const newSubscription =
 					await SubscriptionModel.create({
 						chatId,
-						plan: currentPlan._id,
-						group: currentGroup._id,
-						user: currentUser._id,
+						plan: currentPlan,
+						group: currentGroup,
+						user: currentUser,
 						startDate,
 						endDate,
 					});
@@ -653,109 +655,125 @@ export const updateChannelSubscriptionByUserId = async (
 	const { userId, channelId } = req.params;
 	const { planId } = req.body;
 
-	if (!channelId || !userId) {
-		return res
-			.status(400)
-			.json({ message: "Invalid Request" });
-	}
-
-	if (botSecret !== process.env.BOT_SECRET) {
-		return res.status(401).json({
-			message: "Unauthorized",
-		});
-	}
-
-	const currentUser = await UserModel.findOne({
-		id: userId,
-	});
-
-	const currentPlan = await PlanModel.findOne({
-		_id: planId,
-	});
-
-	if (!currentPlan) {
-		return res.status(404).json({
-			message: "Plan not found",
-		});
-	}
-
-	if (!currentUser) {
-		return res.status(404).json({
-			message: "User not found",
-		});
-	}
-
-	const currentChannel = await ChannelModel.findOne({
-		id: channelId,
-	});
-
-	if (!currentChannel) {
-		return res.status(404).json({
-			message: "Channel not found",
-		});
-	}
-
-	const currentSubscription =
-		await SubscriptionModel.findOne({
-			user: currentUser,
-			channel: currentChannel,
-		});
-
-	if (!currentSubscription) {
-		return res.status(404).json({
-			message: "Subscription not found",
-		});
-	}
-
-	// update subscription
-	const planDuration = currentPlan.plan_duration;
-	const currentEndDate = currentSubscription.endDate;
-
-	switch (planDuration) {
-		case PLAN_DURATION.WEEK:
-			currentEndDate.setDate(currentEndDate.getDate() + 7);
-			break;
-		case PLAN_DURATION.TWO_WEEKS:
-			currentEndDate.setDate(currentEndDate.getDate() + 14);
-			break;
-		case PLAN_DURATION.MONTH:
-			currentEndDate.setDate(currentEndDate.getDate() + 30);
-			break;
-		case PLAN_DURATION.TWO_MONTH:
-			currentEndDate.setDate(currentEndDate.getDate() + 60);
-			break;
-		case PLAN_DURATION.THREE_MONTH:
-			currentEndDate.setDate(currentEndDate.getDate() + 90);
-			break;
-		case PLAN_DURATION.SIX_MONTH:
-			currentEndDate.setDate(
-				currentEndDate.getDate() + 180
-			);
-			break;
-		case PLAN_DURATION.YEAR:
-			currentEndDate.setDate(
-				currentEndDate.getDate() + 365
-			);
-			break;
-		case PLAN_DURATION.LIFETIME:
-			currentEndDate.setDate(
-				currentEndDate.getDate() + 36500
-			);
-			break;
-	}
-
-	await SubscriptionModel.findOneAndUpdate(
-		{
-			_id: currentSubscription._id,
-		},
-		{
-			endDate: currentEndDate,
+	try {
+		if (!channelId || !userId) {
+			return res
+				.status(400)
+				.json({ message: "Invalid Request" });
 		}
-	);
 
-	return res
-		.status(200)
-		.json({ message: "OK, updated subscription" });
+		if (botSecret !== process.env.BOT_SECRET) {
+			return res.status(401).json({
+				message: "Unauthorized",
+			});
+		}
+
+		const currentUser = await UserModel.findOne({
+			id: userId,
+		});
+
+		const currentPlan = await PlanModel.findOne({
+			_id: planId,
+		});
+
+		if (!currentPlan) {
+			return res.status(404).json({
+				message: "Plan not found",
+			});
+		}
+
+		if (!currentUser) {
+			return res.status(404).json({
+				message: "User not found",
+			});
+		}
+
+		const currentChannel = await ChannelModel.findOne({
+			id: channelId,
+		});
+
+		if (!currentChannel) {
+			return res.status(404).json({
+				message: "Channel not found",
+			});
+		}
+
+		const currentSubscription =
+			await SubscriptionModel.findOne({
+				user: currentUser,
+				channel: currentChannel,
+			});
+
+		if (!currentSubscription) {
+			return res.status(404).json({
+				message: "Subscription not found",
+			});
+		}
+
+		// update subscription
+		const planDuration = currentPlan.plan_duration;
+		const currentEndDate = currentSubscription.endDate;
+
+		switch (planDuration) {
+			case PLAN_DURATION.WEEK:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 7
+				);
+				break;
+			case PLAN_DURATION.TWO_WEEKS:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 14
+				);
+				break;
+			case PLAN_DURATION.MONTH:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 30
+				);
+				break;
+			case PLAN_DURATION.TWO_MONTH:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 60
+				);
+				break;
+			case PLAN_DURATION.THREE_MONTH:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 90
+				);
+				break;
+			case PLAN_DURATION.SIX_MONTH:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 180
+				);
+				break;
+			case PLAN_DURATION.YEAR:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 365
+				);
+				break;
+			case PLAN_DURATION.LIFETIME:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 36500
+				);
+				break;
+		}
+
+		await SubscriptionModel.findOneAndUpdate(
+			{
+				_id: currentSubscription._id,
+			},
+			{
+				endDate: currentEndDate,
+			}
+		);
+
+		return res
+			.status(200)
+			.json({ message: "OK, updated subscription" });
+	} catch (e) {
+		return res.status(500).json({
+			message: "Internal Server Error",
+		});
+	}
 };
 
 export const updateChannelSubscriptionByUsername = async (
@@ -766,109 +784,125 @@ export const updateChannelSubscriptionByUsername = async (
 	const { username, channelId } = req.params;
 	const { planId } = req.body;
 
-	if (!channelId || !username) {
-		return res
-			.status(400)
-			.json({ message: "Invalid Request" });
-	}
-
-	if (botSecret !== process.env.BOT_SECRET) {
-		return res.status(401).json({
-			message: "Unauthorized",
-		});
-	}
-
-	const currentUser = await UserModel.findOne({
-		username: username,
-	});
-
-	const currentPlan = await PlanModel.findOne({
-		_id: planId,
-	});
-
-	if (!currentPlan) {
-		return res.status(404).json({
-			message: "Plan not found",
-		});
-	}
-
-	if (!currentUser) {
-		return res.status(404).json({
-			message: "User not found",
-		});
-	}
-
-	const currentChannel = await ChannelModel.findOne({
-		id: channelId,
-	});
-
-	if (!currentChannel) {
-		return res.status(404).json({
-			message: "Channel not found",
-		});
-	}
-
-	const currentSubscription =
-		await SubscriptionModel.findOne({
-			user: currentUser,
-			channel: currentChannel,
-		});
-
-	if (!currentSubscription) {
-		return res.status(404).json({
-			message: "Subscription not found",
-		});
-	}
-
-	// update subscription
-	const planDuration = currentPlan.plan_duration;
-	const currentEndDate = currentSubscription.endDate;
-
-	switch (planDuration) {
-		case PLAN_DURATION.WEEK:
-			currentEndDate.setDate(currentEndDate.getDate() + 7);
-			break;
-		case PLAN_DURATION.TWO_WEEKS:
-			currentEndDate.setDate(currentEndDate.getDate() + 14);
-			break;
-		case PLAN_DURATION.MONTH:
-			currentEndDate.setDate(currentEndDate.getDate() + 30);
-			break;
-		case PLAN_DURATION.TWO_MONTH:
-			currentEndDate.setDate(currentEndDate.getDate() + 60);
-			break;
-		case PLAN_DURATION.THREE_MONTH:
-			currentEndDate.setDate(currentEndDate.getDate() + 90);
-			break;
-		case PLAN_DURATION.SIX_MONTH:
-			currentEndDate.setDate(
-				currentEndDate.getDate() + 180
-			);
-			break;
-		case PLAN_DURATION.YEAR:
-			currentEndDate.setDate(
-				currentEndDate.getDate() + 365
-			);
-			break;
-		case PLAN_DURATION.LIFETIME:
-			currentEndDate.setDate(
-				currentEndDate.getDate() + 36500
-			);
-			break;
-	}
-
-	await SubscriptionModel.findOneAndUpdate(
-		{
-			_id: currentSubscription._id,
-		},
-		{
-			endDate: currentEndDate,
+	try {
+		if (!channelId || !username) {
+			return res
+				.status(400)
+				.json({ message: "Invalid Request" });
 		}
-	);
 
-	return res
-		.status(200)
-		.json({ message: "OK, updated subscription" });
+		if (botSecret !== process.env.BOT_SECRET) {
+			return res.status(401).json({
+				message: "Unauthorized",
+			});
+		}
+
+		const currentUser = await UserModel.findOne({
+			username: username,
+		});
+
+		const currentPlan = await PlanModel.findOne({
+			_id: planId,
+		});
+
+		if (!currentPlan) {
+			return res.status(404).json({
+				message: "Plan not found",
+			});
+		}
+
+		if (!currentUser) {
+			return res.status(404).json({
+				message: "User not found",
+			});
+		}
+
+		const currentChannel = await ChannelModel.findOne({
+			id: channelId,
+		});
+
+		if (!currentChannel) {
+			return res.status(404).json({
+				message: "Channel not found",
+			});
+		}
+
+		const currentSubscription =
+			await SubscriptionModel.findOne({
+				user: currentUser,
+				channel: currentChannel,
+			});
+
+		if (!currentSubscription) {
+			return res.status(404).json({
+				message: "Subscription not found",
+			});
+		}
+
+		// update subscription
+		const planDuration = currentPlan.plan_duration;
+		const currentEndDate = currentSubscription.endDate;
+
+		switch (planDuration) {
+			case PLAN_DURATION.WEEK:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 7
+				);
+				break;
+			case PLAN_DURATION.TWO_WEEKS:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 14
+				);
+				break;
+			case PLAN_DURATION.MONTH:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 30
+				);
+				break;
+			case PLAN_DURATION.TWO_MONTH:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 60
+				);
+				break;
+			case PLAN_DURATION.THREE_MONTH:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 90
+				);
+				break;
+			case PLAN_DURATION.SIX_MONTH:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 180
+				);
+				break;
+			case PLAN_DURATION.YEAR:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 365
+				);
+				break;
+			case PLAN_DURATION.LIFETIME:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 36500
+				);
+				break;
+		}
+
+		await SubscriptionModel.findOneAndUpdate(
+			{
+				_id: currentSubscription._id,
+			},
+			{
+				endDate: currentEndDate,
+			}
+		);
+
+		return res
+			.status(200)
+			.json({ message: "OK, updated subscription" });
+	} catch (e) {
+		return res.status(500).json({
+			message: "Internal Server Error",
+		});
+	}
 };
 
 export const updateGroupSubscriptionByUserId = async (
@@ -979,11 +1013,9 @@ export const updateGroupSubscriptionByUserId = async (
 		}
 	);
 
-	return res
-		.status(200)
-		.json({
-			message: "OK, updated group subscription by userId",
-		});
+	return res.status(200).json({
+		message: "OK, updated group subscription by userId",
+	});
 };
 
 export const updateGroupSubscriptionByUsername = async (
@@ -994,110 +1026,125 @@ export const updateGroupSubscriptionByUsername = async (
 	const { username, groupId } = req.params;
 	const { planId } = req.body;
 
-	if (!groupId || !username) {
-		return res
-			.status(400)
-			.json({ message: "Invalid Request" });
-	}
-
-	if (botSecret !== process.env.BOT_SECRET) {
-		return res.status(401).json({
-			message: "Unauthorized",
-		});
-	}
-
-	const currentUser = await UserModel.findOne({
-		username: username,
-	});
-
-	const currentPlan = await PlanModel.findOne({
-		_id: planId,
-	});
-
-	if (!currentPlan) {
-		return res.status(404).json({
-			message: "Plan not found",
-		});
-	}
-
-	if (!currentUser) {
-		return res.status(404).json({
-			message: "User not found",
-		});
-	}
-
-	const currentGroup = await GroupModel.findOne({
-		id: groupId,
-	});
-
-	if (!currentGroup) {
-		return res.status(404).json({
-			message: "Channel not found",
-		});
-	}
-
-	const currentSubscription =
-		await SubscriptionModel.findOne({
-			user: currentUser,
-			channel: currentGroup,
-		});
-
-	if (!currentSubscription) {
-		return res.status(404).json({
-			message: "Subscription not found",
-		});
-	}
-
-	// update subscription
-	const planDuration = currentPlan.plan_duration;
-	const currentEndDate = currentSubscription.endDate;
-
-	switch (planDuration) {
-		case PLAN_DURATION.WEEK:
-			currentEndDate.setDate(currentEndDate.getDate() + 7);
-			break;
-		case PLAN_DURATION.TWO_WEEKS:
-			currentEndDate.setDate(currentEndDate.getDate() + 14);
-			break;
-		case PLAN_DURATION.MONTH:
-			currentEndDate.setDate(currentEndDate.getDate() + 30);
-			break;
-		case PLAN_DURATION.TWO_MONTH:
-			currentEndDate.setDate(currentEndDate.getDate() + 60);
-			break;
-		case PLAN_DURATION.THREE_MONTH:
-			currentEndDate.setDate(currentEndDate.getDate() + 90);
-			break;
-		case PLAN_DURATION.SIX_MONTH:
-			currentEndDate.setDate(
-				currentEndDate.getDate() + 180
-			);
-			break;
-		case PLAN_DURATION.YEAR:
-			currentEndDate.setDate(
-				currentEndDate.getDate() + 365
-			);
-			break;
-		case PLAN_DURATION.LIFETIME:
-			currentEndDate.setDate(
-				currentEndDate.getDate() + 36500
-			);
-			break;
-	}
-
-	await SubscriptionModel.findOneAndUpdate(
-		{
-			_id: currentSubscription._id,
-		},
-		{
-			endDate: currentEndDate,
+	try {
+		if (!groupId || !username) {
+			return res
+				.status(400)
+				.json({ message: "Invalid Request" });
 		}
-	);
 
-	return res
-		.status(200)
-		.json({
+		if (botSecret !== process.env.BOT_SECRET) {
+			return res.status(401).json({
+				message: "Unauthorized",
+			});
+		}
+
+		const currentUser = await UserModel.findOne({
+			username: username,
+		});
+
+		const currentPlan = await PlanModel.findOne({
+			_id: planId,
+		});
+
+		if (!currentPlan) {
+			return res.status(404).json({
+				message: "Plan not found",
+			});
+		}
+
+		if (!currentUser) {
+			return res.status(404).json({
+				message: "User not found",
+			});
+		}
+
+		const currentGroup = await GroupModel.findOne({
+			id: groupId,
+		});
+
+		if (!currentGroup) {
+			return res.status(404).json({
+				message: "Channel not found",
+			});
+		}
+
+		const currentSubscription =
+			await SubscriptionModel.findOne({
+				user: currentUser,
+				channel: currentGroup,
+			});
+
+		if (!currentSubscription) {
+			return res.status(404).json({
+				message: "Subscription not found",
+			});
+		}
+
+		// update subscription
+		const planDuration = currentPlan.plan_duration;
+		const currentEndDate = currentSubscription.endDate;
+
+		switch (planDuration) {
+			case PLAN_DURATION.WEEK:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 7
+				);
+				break;
+			case PLAN_DURATION.TWO_WEEKS:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 14
+				);
+				break;
+			case PLAN_DURATION.MONTH:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 30
+				);
+				break;
+			case PLAN_DURATION.TWO_MONTH:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 60
+				);
+				break;
+			case PLAN_DURATION.THREE_MONTH:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 90
+				);
+				break;
+			case PLAN_DURATION.SIX_MONTH:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 180
+				);
+				break;
+			case PLAN_DURATION.YEAR:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 365
+				);
+				break;
+			case PLAN_DURATION.LIFETIME:
+				currentEndDate.setDate(
+					currentEndDate.getDate() + 36500
+				);
+				break;
+		}
+
+		await SubscriptionModel.findOneAndUpdate(
+			{
+				_id: currentSubscription._id,
+			},
+			{
+				endDate: currentEndDate,
+			}
+		);
+
+		return res.status(200).json({
 			message:
 				"OK, updated group subscription by username ",
 		});
+	} catch (e) {
+		console.log(e);
+		return res.status(500).json({
+			message: "Internal Server Error",
+		});
+	}
 };

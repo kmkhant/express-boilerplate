@@ -80,6 +80,7 @@ export const createProject = async (
 		if (!currentAdmin) {
 			const newAdmin = await AdminModel.create({
 				id: adminId,
+				adminChatId: userInfo.chatId,
 				name: userInfo.name,
 				username: userInfo.username,
 			});
@@ -178,8 +179,7 @@ export const addChannelToProject = async (
 
 	if (!currentAdmin) {
 		return res.status(403).json({
-			message:
-				"I can't find you. please, create a project first.",
+			message: "please, create a project first.",
 		});
 	}
 
@@ -225,9 +225,9 @@ export const addChannelToProject = async (
 		console.log(channelExists);
 
 		if (channelExists)
-			return res
-				.status(400)
-				.json({ message: "Channel is already added to the project" });
+			return res.status(400).json({
+				message: "Channel is already added to the project",
+			});
 		else {
 			await ProjectModel.findOneAndUpdate(
 				{

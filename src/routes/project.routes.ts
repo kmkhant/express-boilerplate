@@ -12,7 +12,10 @@ import {
 	removeGroupFromProject,
 } from "@/controllers/project.controller";
 
-import { updateProjectBot } from "@/controllers/bot.controller";
+import {
+	addProjectBot,
+	updateProjectBot,
+} from "@/controllers/bot.controller";
 
 const router = express.Router();
 
@@ -38,6 +41,7 @@ router.patch(
 );
 
 // bot CRUD to project
+router.post("/:projectId/addBot", addProjectBot); // add bot to project
 router.post("/:projectId/updateBot", updateProjectBot); // update bot token if bot already exists
 
 export default router;

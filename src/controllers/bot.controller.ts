@@ -5,7 +5,93 @@ import { Request as JWTRequest } from "express-jwt";
 import { Response } from "express";
 import BotModel from "@/models/bot.model";
 
-// combined update/create handler, fix later if needed
+// create bot handler
+export const addProjectBot = async (
+	req: JWTRequest,
+	res: Response
+) => {
+	const { userInfo } = req.auth as IAuth;
+	const { projectId } = req.params;
+	const { botId, botName, botUsername, token, webhookURL } =
+		req.body;
+
+	const adminId = userInfo.id;
+
+	if (!token) {
+		return res.status(400).json({
+			message: "Invalid Request",
+		});
+	}
+
+	try {
+		const currentAdmin = await AdminModel.findOne({
+			id: adminId,
+		});
+
+		if (!currentAdmin) {
+			return res.status(404).json({
+				message: "Admin not found",
+			});
+		}
+
+		const currentProject = await ProjectModel.findOne({
+			_id: projectId,
+		});
+
+		if (!currentProject) {
+			return res.status(404).json({
+				message: "Project not found",
+			});
+		}
+
+		// check if admin is owner of the project
+		if (!currentProject.admin.equals(currentAdmin._id)) {
+			return res.status(401).json({
+				message: "Unauthorized",
+			});
+		}
+
+		// check if bot already exists in the project
+		if (currentProject.bot) {
+			return res.status(400).json({
+				message:
+					"Bot already exists in the project, use update bot endpoint",
+			});
+		}
+
+		// create new bot
+		const newBot = await BotModel.create({
+			id: botId,
+			name: botName,
+			username: botUsername,
+			token,
+			webhookURL,
+			admin: currentAdmin,
+			project: currentProject,
+		});
+
+		// update project with bot
+		await ProjectModel.findOneAndUpdate(
+			{
+				_id: projectId,
+			},
+			{
+				bot: newBot,
+			}
+		);
+
+		return res.status(201).json({
+			message: "Bot created successfully",
+		});
+	} catch (e) {
+		console.log(e);
+		return res.status(500).json({
+			message: "Internal server error",
+		});
+	}
+};
+
+// update handler
 export const updateProjectBot = async (
 	req: JWTRequest,
 	res: Response

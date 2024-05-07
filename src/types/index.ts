@@ -1,5 +1,6 @@
 export interface IUserInfo {
-	id: string;
+	chatId: number;
+	id: number;
 	name: string;
 	username: string;
 }
