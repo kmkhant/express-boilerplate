@@ -81,7 +81,7 @@ export const addProjectBot = async (
 		);
 
 		return res.status(201).json({
-			message: "Bot created successfully",
+			message: "connected with bot",
 		});
 	} catch (e) {
 		console.log(e);
@@ -98,15 +98,10 @@ export const updateProjectBot = async (
 ) => {
 	const { userInfo } = req.auth as IAuth;
 	const { projectId } = req.params;
-	const { botId } = req.body;
+	const { botId, botName, botUsername, token, webhookURL } =
+		req.body;
 
 	const adminId = userInfo.id;
-
-	if (!botId) {
-		return res.status(400).json({
-			message: "Invalid Request",
-		});
-	}
 
 	try {
 		const currentAdmin = await AdminModel.findOne({
@@ -138,9 +133,20 @@ export const updateProjectBot = async (
 
 		// check if bot is already exists in the project
 		if (currentProject.bot) {
+			// delete current bot
+			await BotModel.findOneAndDelete({
+				_id: currentProject.bot,
+			});
+
 			// update current project with new bot
 			const newBot = await BotModel.findOne({
 				id: botId,
+				name: botName,
+				username: botUsername,
+				token,
+				webhookURL,
+				admin: currentAdmin,
+				project: currentProject,
 			});
 
 			await ProjectModel.findOneAndUpdate(

@@ -74,7 +74,7 @@ export const createProject = async (
 
 		// TODO - check if admin id is a valid telegram id if not create him as an admin
 		const currentAdmin = await AdminModel.findOne({
-			where: { id: adminId },
+			id: adminId,
 		});
 
 		if (!currentAdmin) {
@@ -84,18 +84,29 @@ export const createProject = async (
 				name: userInfo.name,
 				username: userInfo.username,
 			});
-			const project = await ProjectModel.create({
+			const newProject = await ProjectModel.create({
 				name,
 				description,
 				admin: newAdmin,
 			});
-			return res.status(200).json(project);
+			return res.status(200).json(newProject);
 		} else {
-			await ProjectModel.create({
+			const newProject = await ProjectModel.create({
 				name,
 				description,
 				admin: currentAdmin,
 			});
+
+			await AdminModel.findByIdAndUpdate(
+				{
+					_id: currentAdmin._id,
+				},
+				{
+					$addToSet: {
+						projects: newProject,
+					},
+				}
+			);
 			return res.status(200).json({ message: "OK" });
 		}
 	} catch (error) {
@@ -128,30 +139,41 @@ export const updateProject = async (
 		// check current user is admin of	 the project
 		const adminId = userInfo.id;
 
-		let project = await ProjectModel.findOne({
-			_id: projectId,
-		}).populate("admin");
+		const currentAdmin = await AdminModel.findOne({
+			id: adminId,
+		});
 
-		if (!project) {
+		if (!currentAdmin) {
+			return res.status(403).json({ message: "Forbidden" });
+		}
+
+		let currentProject = await ProjectModel.findOne({
+			_id: projectId,
+		});
+
+		if (!currentProject) {
 			return res
 				.status(404)
 				.json({ message: "Project not found" });
 		}
 
-		if (project.admin instanceof AdminModel) {
-			// check if the user is the admin of the project
-			if (project.admin.id !== adminId) {
-				return res
-					.status(403)
-					.json({ message: "Forbidden" });
-			}
-
-			// update the project
+		if (
+			currentProject &&
+			currentProject.admin.equals(currentAdmin._id)
+		) {
 			await ProjectModel.findOneAndUpdate(
-				{ _id: projectId },
-				{ name, description }
+				{
+					_id: projectId,
+				},
+				{
+					name,
+					description,
+				}
 			);
+		} else {
+			return res.status(403).json({ message: "Forbidden" });
 		}
+
 		return res.status(200).json({ message: "OK" });
 	} else {
 		return res
