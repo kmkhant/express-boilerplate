@@ -244,8 +244,6 @@ export const addChannelToProject = async (
 			(channel) => channel.equals(currentChannel._id)
 		);
 
-		console.log(channelExists);
-
 		if (channelExists)
 			return res.status(400).json({
 				message: "Channel is already added to the project",
@@ -259,6 +257,10 @@ export const addChannelToProject = async (
 					$push: { channels: currentChannel },
 				}
 			);
+
+			return res
+				.status(201)
+				.json({ message: "OK, added channel to project" });
 		}
 	}
 

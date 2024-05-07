@@ -6,7 +6,10 @@ import connection from "./database/connection";
 import * as middlewares from "./middlewares";
 import MessageResponse from "./interfaces/MessageResponse";
 import { authMiddleware } from "./middlewares/auth";
-import { botWebHookHandler } from "@/controllers/webhook.controller";
+import {
+	botWebHookHandler,
+	removeBotWebHook as removeBotWebhook,
+} from "@/controllers/webhook.controller";
 
 // Routes
 import projectRoutes from "@/routes/project.routes";
@@ -27,6 +30,10 @@ app.use(express.json());
 
 // public access from telegram to hook - TODO - encrypt/hash the uri
 app.use("/api/v1/bot/webhook/:botId", botWebHookHandler);
+app.use(
+	"/api/v1/bot/removeWebhook/:botId",
+	removeBotWebhook
+);
 
 app.use(authMiddleware);
 
