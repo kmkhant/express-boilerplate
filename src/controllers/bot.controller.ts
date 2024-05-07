@@ -6,17 +6,17 @@ import { Response } from "express";
 import BotModel from "@/models/bot.model";
 
 // combined update/create handler, fix later if needed
-export const addBotToProject = async (
+export const updateProjectBot = async (
 	req: JWTRequest,
 	res: Response
 ) => {
 	const { userInfo } = req.auth as IAuth;
 	const { projectId } = req.params;
-	const { name, token } = req.body;
+	const { botId } = req.body;
 
 	const adminId = userInfo.id;
 
-	if (!name || !token) {
+	if (!botId) {
 		return res.status(400).json({
 			message: "Invalid Request",
 		});
@@ -52,41 +52,27 @@ export const addBotToProject = async (
 
 		// check if bot is already exists in the project
 		if (currentProject.bot) {
-			// update the bot token
-			await BotModel.findOneAndUpdate(
-				{
-					_id: currentProject.bot,
-				},
-				{
-					name,
-					token,
-				}
-			);
-			return res
-				.status(200)
-				.json({ message: "Bot updated successfully" });
-		} else {
-			const newBot = new BotModel({
-				name,
-				token,
-				admin: currentAdmin,
+			// update current project with new bot
+			const newBot = await BotModel.findOne({
+				id: botId,
 			});
-
-			await newBot.save();
 
 			await ProjectModel.findOneAndUpdate(
 				{
 					_id: projectId,
 				},
 				{
-					bot: newBot._id,
+					bot: newBot,
 				}
 			);
-
 			return res
-				.status(201)
-				.json({ message: "Bot added successfully" });
+				.status(200)
+				.json({ message: "bot updated successfully" });
 		}
+
+		return res
+			.status(400)
+			.json({ message: "project has no bot to update" });
 	} catch (e) {
 		return res.status(500).json({
 			message: "Internal server error",

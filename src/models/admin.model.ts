@@ -2,7 +2,11 @@ import mongoose from "mongoose";
 
 const AdminSchema = new mongoose.Schema({
 	id: {
-		type: String, // format md5(userid+meowm30w)
+		type: Number, // format md5(userid+meowm30w)
+		required: true,
+	},
+	adminChatId: {
+		type: String,
 		required: true,
 	},
 	name: {
@@ -13,16 +17,10 @@ const AdminSchema = new mongoose.Schema({
 		type: String,
 		required: false,
 	},
-	channels: [
+	projects: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
-			ref: "Channel",
-		},
-	],
-	groups: [
-		{
-			type: mongoose.Schema.Types.ObjectId,
-			ref: "Group",
+			ref: "Project",
 		},
 	],
 	accepted_payments: [

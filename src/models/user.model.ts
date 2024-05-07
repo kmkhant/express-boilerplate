@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const UserSchema = new mongoose.Schema({
 	id: {
 		// format md5(userid+meowm30w)
-		type: String,
+		type: Number,
 		required: true,
 	},
 	name: {

@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const BotSchema = new mongoose.Schema({
 	id: {
-		type: String,
+		type: Number,
 		required: true,
 	},
 	name: {

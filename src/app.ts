@@ -6,6 +6,7 @@ import connection from "./database/connection";
 import * as middlewares from "./middlewares";
 import MessageResponse from "./interfaces/MessageResponse";
 import { authMiddleware } from "./middlewares/auth";
+import { botWebHookHandler } from "@/controllers/webhook.controller";
 
 // Routes
 import projectRoutes from "@/routes/project.routes";
@@ -24,7 +25,8 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/v1/bot/webhook", webHookRoutes);
+// public access from telegram to hook - TODO - encrypt/hash the uri
+app.use("/api/v1/bot/webhook/:botId", botWebHookHandler);
 
 app.use(authMiddleware);
 
@@ -42,7 +44,8 @@ app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/subscriptions/plan", planRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
 
-// web hook
+// web hook management
+app.use("/api/v1/bot/webhook-mgmt", webHookRoutes);
 
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);

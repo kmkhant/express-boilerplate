@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { botWebHookHandler } from "@/controllers/webhook.controller";
+import { removeBotWebHook } from "@/controllers/webhook.controller";
 
 const router = Router();
 
-router.post("/:botId", botWebHookHandler);
+router.delete("/:botId", removeBotWebHook);
 
 export default router;

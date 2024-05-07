@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const SubscriptionSchema = new mongoose.Schema({
 	chatId: {
-		type: String,
+		type: Number,
 		required: true,
 	},
 	plan: {
