@@ -130,7 +130,6 @@ export const createSubscription = async (
 
 				const newSubscription =
 					await SubscriptionModel.create({
-						chatId,
 						plan: currentPlan,
 						channel: currentChannel,
 						user: newUser,
@@ -170,7 +169,6 @@ export const createSubscription = async (
 				// add subscription with existing user
 				const newSubscription =
 					await SubscriptionModel.create({
-						chatId,
 						plan: currentPlan,
 						channel: currentChannel,
 						user: currentUser,
@@ -218,7 +216,6 @@ export const createSubscription = async (
 
 				const newSubscription =
 					await SubscriptionModel.create({
-						chatId,
 						plan: currentPlan,
 						group: currentGroup,
 						user: newUser,
@@ -245,7 +242,6 @@ export const createSubscription = async (
 				// add subscription with existing user
 				const newSubscription =
 					await SubscriptionModel.create({
-						chatId,
 						plan: currentPlan,
 						group: currentGroup,
 						user: currentUser,

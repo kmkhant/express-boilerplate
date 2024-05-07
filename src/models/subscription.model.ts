@@ -1,10 +1,6 @@
 import mongoose from "mongoose";
 
 const SubscriptionSchema = new mongoose.Schema({
-	chatId: {
-		type: Number,
-		required: true,
-	},
 	plan: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Plan",
